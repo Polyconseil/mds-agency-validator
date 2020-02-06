@@ -8,7 +8,6 @@ from flask import url_for
 from . import utils
 
 
-# TODO use enums ?
 PROPULSION_TYPE = [
     'combustion',
     'electric',
@@ -39,12 +38,13 @@ def generate_valid_payload():
 
 
 def get_valid_request(**kwargs):
+    # TODO: this is a basic token, not a bearer token
     auth = kwargs.pop('auth', b64encode(b'username:password').decode('utf8'))
     request = {
         'data': generate_valid_payload(),
         'content_type': 'application/json',
         'headers': {
-            'Authorization': 'Basic %s' % auth
+            'Authorization': 'Bearer %s' % auth
         }
     }
     request.update(kwargs)
@@ -53,29 +53,45 @@ def get_valid_request(**kwargs):
 
 
 def test_valid_post(client, app_context):
-    url = url_for('agency_v0_4_vehicles')
+    url = url_for('agency_v0_4_0_vehicles')
     response = client.post(
         url,
         **get_valid_request(),
     )
-    assert response.status == '200 OK'
+    assert response.status == '201 CREATED'
+    assert response.data == b'OK'
+
+    # Try with minimal arguments
+    data = generate_valid_payload()
+    del data['year']
+    del data['mfgr']
+    del data['model']
+    kwargs = get_valid_request(data=data)
+    url = url_for('agency_v0_4_0_vehicles')
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '201 CREATED'
     assert response.data == b'OK'
 
 
 def test_incorrect_content_type(client, app_context):
-    url = url_for('agency_v0_4_vehicles')
+    # This is not handle by MDS 0.4.0, so it works with a bad Content-Type
+    url = url_for('agency_v0_4_0_vehicles')
     kwargs = get_valid_request()
     kwargs['content_type'] = 'test/html'
     response = client.post(
         url,
         **kwargs,
     )
-    assert response.status == '500 INTERNAL SERVER ERROR'
-    assert b'Request content type should be application/json' in response.data
+    assert response.status == '201 CREATED'
+    assert response.data == b'OK'
 
 
 def test_incorrect_authorization(client, app_context):
-    url = url_for('agency_v0_4_vehicles')
+    # With no auth at all
+    url = url_for('agency_v0_4_0_vehicles')
     kwargs = get_valid_request()
     del kwargs['headers']['Authorization']
     response = client.post(
@@ -85,9 +101,20 @@ def test_incorrect_authorization(client, app_context):
     assert response.status == '401 UNAUTHORIZED'
     assert b'No auth provided' in response.data
 
+    # With Basic token
+    kwargs = get_valid_request()
+    token = b64encode(b'username:password').decode('utf8')
+    kwargs['headers']['Authorization'] = 'Basic %s' % token
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '401 UNAUTHORIZED'
+    assert b'Bearer token required' in response.data
 
-def test_wrong_json_payload_missing_required(client, app_context):
-    url = url_for('agency_v0_4_vehicles')
+
+def test_missing_required(client, app_context):
+    url = url_for('agency_v0_4_0_vehicles')
     data = generate_valid_payload()
     del data['device_id']
     kwargs = get_valid_request(data=data)
@@ -95,12 +122,23 @@ def test_wrong_json_payload_missing_required(client, app_context):
         url,
         **kwargs,
     )
-    assert response.status == '500 INTERNAL SERVER ERROR'
-    assert b"JsonValidationError : 'device_id' is a required property" in response.data
+    assert response.status == '400 BAD REQUEST'
+    assert b"JsonValidationError : {'device_id': ['required field']}" in response.data
 
 
-def test_wrong_json_payload_wrong_type(client, app_context):
-    url = url_for('agency_v0_4_vehicles')
+def test_wrong_type(client, app_context):
+    url = url_for('agency_v0_4_0_vehicles')
+    data = generate_valid_payload()
+    data['device_id'] = 346
+    kwargs = get_valid_request(data=data)
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '400 BAD REQUEST'
+    assert b"JsonValidationError : {'device_id': ['must be of uuid type']}" in response.data
+
+    url = url_for('agency_v0_4_0_vehicles')
     data = generate_valid_payload()
     data['vehicle_id'] = 346
     kwargs = get_valid_request(data=data)
@@ -108,5 +146,5 @@ def test_wrong_json_payload_wrong_type(client, app_context):
         url,
         **kwargs,
     )
-    assert response.status == '500 INTERNAL SERVER ERROR'
-    assert b"JsonValidationError : 346 is not of type 'string'" in response.data
+    assert response.status == '400 BAD REQUEST'
+    assert b"JsonValidationError : {'vehicle_id': ['must be of string type']}" in response.data
