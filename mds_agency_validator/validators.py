@@ -17,3 +17,7 @@ base_path = os.path.abspath(os.path.dirname(__file__))
 path = os.path.join(base_path, 'schemas/agency_v0.4.0/post_vehicle.yaml')
 with open(path, 'r') as schema:
     agency_v0_4_0_vehicles = MdsValidator(yaml.safe_load(schema))
+
+path = os.path.join(base_path, 'schemas/agency_v0.4.0/post_vehicle_event.yaml')
+with open(path, 'r') as schema:
+    agency_v0_4_0_vehicles_event = MdsValidator(yaml.safe_load(schema))

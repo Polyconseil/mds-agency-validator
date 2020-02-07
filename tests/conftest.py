@@ -11,4 +11,3 @@ def client():
     app = create_app()
     app.test_request_context().push()
     return app.test_client()
-
