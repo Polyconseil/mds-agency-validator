@@ -1,26 +1,9 @@
-import cerberus
 import json
 import os
 import re
-import yaml
 
 from flask import abort
 from flask import request
-
-
-class MdsValidator(cerberus.Validator):
-    def _validate_type_uuid(self, value):
-        if not isinstance(value, str):
-            return False
-        re_uuid = re.compile(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', re.I)
-        return bool(re_uuid.match(value))
-
-
-base_path = os.path.abspath(os.path.dirname(__file__))
-
-path = os.path.join(base_path, 'schemas/agency_v0.4.0/post_vehicle_event.yaml')
-with open(path, 'r') as schema:
-    agency_v0_4_0_vehicles_event = MdsValidator(yaml.safe_load(schema))
 
 
 def check_and_extract_agency_v0_4_0():
@@ -123,6 +106,107 @@ def agency_v0_4_0_vehicle_register():
     else:
         if not isinstance(model, str):
             bad_param.append('model')
+
+    # Remaining keys
+    for param in payload:
+        bad_param.append(param)
+
+    result = {}
+    if bad_param:
+        result['bad_param'] = bad_param
+    if missing_param:
+        result['missing_param'] = missing_param
+    if result:
+        abort(400, json.dumps(result))
+
+    return '', 201
+
+
+def agency_v0_4_0_vehicle_event():
+    """validate MDS Agency API v0.4.0 Vehicle - Event endpoint"""
+    payload = check_and_extract_agency_v0_4_0()
+    bad_param = []
+    missing_param = []
+
+    try:
+        event_type = payload.pop('event_type')
+    except KeyError:
+        missing_param.append('event_type')
+        event_type = None
+    else:
+        allowed_event_types = [
+            'register',
+            'service_start',
+            'service_end',
+            'provider_drop_off',
+            'provider_pick_up',
+            'city_pick_up',
+            'reserve',
+            'cancel_reservation',
+            'trip_start',
+            'trip_enter',
+            'trip_leave',
+            'trip_end',
+            'deregister',
+        ]
+        if event_type not in allowed_event_types:
+            bad_param.append('event_type')
+
+    # TODO confirm if event_type == deregister implies that
+    # event_type_reason is required
+
+    allowed_event_types_reasons = []
+    if event_type == 'service_end':
+        allowed_event_types_reasons = [
+            'low_battery',
+            'maintenance',
+            'compliance',
+            'off_hours',
+        ]
+    elif event_type == 'provider_pick_up':
+        allowed_event_types_reasons = [
+            'rebalance',
+            'maintenance',
+            'charge',
+            'compliance',
+        ]
+    elif event_type == 'deregister':
+        allowed_event_types_reasons = ['missing', 'decommissioned']
+    # if allowed_event_types_reasons is not empty then the value is excpected
+    if allowed_event_types_reasons:
+        try:
+            event_type_reason = payload.pop('event_type_reason')
+        except KeyError:
+            missing_param.append('event_type_reason')
+        else:
+            if event_type_reason not in allowed_event_types_reasons:
+                bad_param.append('event_type_reason')
+
+    try:
+        timestamp = payload.pop('timestamp')
+    except KeyError:
+        missing_param.append('timestamp')
+    else:
+        if not isinstance(timestamp, int):
+            bad_param.append('timestamp')
+
+    try:
+        telemetry = payload.pop('telemetry')
+    except KeyError:
+        missing_param.append('telemetry')
+    else:
+        # validate telemetry
+        if not isinstance(telemetry, dict):
+            bad_param.append('telemetry')
+
+    if event_type in ['trip_start', 'trip_enter', 'trip_leave', 'trip_end']:
+        try:
+            trip_id = payload.pop('trip_id')
+        except KeyError:
+            missing_param.append('trip_id')
+        else:
+            if not is_uuid(trip_id):
+                bad_param.append('trip_id')
 
     # Remaining keys
     for param in payload:

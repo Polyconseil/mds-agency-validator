@@ -1,3 +1,4 @@
+import datetime
 import random
 import string
 
@@ -9,3 +10,7 @@ def random_string(length=10):
 
 def random_year():
     return random.randint(1800, 2100)
+
+
+def get_timestamp():
+    return int(datetime.datetime.now().timestamp())

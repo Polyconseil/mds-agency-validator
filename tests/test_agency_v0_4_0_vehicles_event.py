@@ -1,17 +1,19 @@
 from base64 import b64encode
-import datetime
 import json
+import html
 import uuid
 import random
 
 from flask import url_for
+
+from . import utils
 
 
 def generete_telemetry():
     return {
         'device_id': str(uuid.uuid4()),
         # TODO should it be the same as the other timestamp ?
-        'timestamp': int(datetime.datetime.now().timestamp()),
+        'timestamp': utils.get_timestamp(),
         'gps': {
             'lat': random.uniform(-90, 90),
             'lng': random.uniform(-180, 180),
@@ -25,7 +27,7 @@ def generate_payload(event):
     and trip_id"""
     payload = {
         'telemetry': generete_telemetry(),
-        'timestamp': int(datetime.datetime.now().timestamp()),
+        'timestamp': utils.get_timestamp(),
     }
     payload.update(event)
     return payload
@@ -60,7 +62,7 @@ def test_valid_post(client, app_context):
             **kwargs,
         )
         assert response.status == '201 CREATED'
-        assert response.data == b'OK'
+        assert response.data == b''
 
 
 def test_incorrect_content_type(client, app_context):
@@ -76,7 +78,7 @@ def test_incorrect_content_type(client, app_context):
         **kwargs,
     )
     assert response.status == '201 CREATED'
-    assert response.data == b'OK'
+    assert response.data == b''
 
 
 def test_incorrect_authorization(client, app_context):
@@ -108,7 +110,8 @@ def test_trip_id(client, app_context):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert b"'trip_id' is required" in response.data
+    expected = html.escape(json.dumps({'missing_param': ['trip_id']}))
+    assert expected.encode() in response.data
 
     # trip_ip should not be present
     event = {'event_type': 'register', 'trip_id': str(uuid.uuid4())}
@@ -121,8 +124,8 @@ def test_trip_id(client, app_context):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert b"'trip_id' must not be present" in response.data
-    assert b"unallowed value register" in response.data
+    expected = html.escape(json.dumps({'bad_param': ['trip_id']}))
+    assert expected.encode() in response.data
 
 
 def test_event_type_reason(client, app_context):
@@ -139,10 +142,8 @@ def test_event_type_reason(client, app_context):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert (
-        b"[\'unallowed value compliance\', &quot;depends on these values: "
-        b"{\'event_type\': \'deregister\'}&quot;]"
-    ) in response.data
+    expected = html.escape(json.dumps({'bad_param': ['event_type_reason']}))
+    assert expected.encode() in response.data
 
     # event_type_reason has a wrong value
     event = {'event_type': 'deregister', 'event_type_reason': 'compliance'}
@@ -155,7 +156,8 @@ def test_event_type_reason(client, app_context):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert b"unallowed value compliance" in response.data
+    expected = html.escape(json.dumps({'bad_param': ['event_type_reason']}))
+    assert expected.encode() in response.data
 
     # event_type_reason should be present
     # TODO confirm if it's true
@@ -169,7 +171,8 @@ def test_event_type_reason(client, app_context):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert b"field 'event_type_reason' is required" in response.data
+    expected = html.escape(json.dumps({'missing_param': ['event_type_reason']}))
+    assert expected.encode() in response.data
 
 
 def test_missing_required(client, app_context):
@@ -184,7 +187,8 @@ def test_missing_required(client, app_context):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert b"'timestamp': ['required field']" in response.data
+    expected = html.escape(json.dumps({'missing_param': ['timestamp']}))
+    assert expected.encode() in response.data
 
 
 def test_wrong_type(client, app_context):
@@ -199,4 +203,5 @@ def test_wrong_type(client, app_context):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert b"JsonValidationError : {'telemetry': ['must be of dict type']}" in response.data
+    expected = html.escape(json.dumps({'bad_param': ['telemetry']}))
+    assert expected.encode() in response.data
