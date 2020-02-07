@@ -52,4 +52,14 @@ def create_app():
 
     # TODO : add vehicle update
 
+    @app.route('/v0.4.0/vehicles/<device_id>/event', methods=['POST'])
+    def agency_v0_4_0_vehicles_event(device_id):  # pylint: disable=unused-variable
+        payload = check_and_extract_agency_v0_4_0()
+        # TODO check device_id against registered vehicles
+        validator = validators.agency_v0_4_0_vehicles_event
+        if not validator.validate(payload):
+            abort(400, 'JsonValidationError : ' + str(validator.errors))
+        # TODO : return correct status and errores as in specs
+        return 'OK', 201
+
     return app
