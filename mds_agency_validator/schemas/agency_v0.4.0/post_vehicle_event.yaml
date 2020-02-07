@@ -1,0 +1,121 @@
+event_type:
+  type: string
+  required: true
+  allowed:
+  - register
+  - service_start
+  - service_end
+  - provider_drop_off
+  - provider_pick_up
+  - city_pick_up
+  - reserve
+  - cancel_reservation
+  - trip_start
+  - trip_enter
+  - trip_leave
+  - trip_end
+  - deregister
+  allof:
+  - oneof:
+    - excludes: trip_id
+      allowed:
+      - register
+      - service_start
+      - service_end
+      - provider_drop_off
+      - provider_pick_up
+      - city_pick_up
+      - reserve
+      - cancel_reservation
+      - deregister
+    - dependencies: trip_id
+      allowed:
+      - trip_start
+      - trip_enter
+      - trip_leave
+      - trip_end
+  - oneof:
+    - excludes: event_type_reason
+      allowed:
+      - register
+      - service_start
+      - provider_drop_off
+      - city_pick_up
+      - reserve
+      - cancel_reservation
+      - trip_start
+      - trip_enter
+      - trip_leave
+      - trip_end
+    - dependencies: event_type_reason
+      allowed:
+      - service_end
+      - provider_pick_up
+      - deregister
+event_type_reason:
+  type: string
+  oneof:
+  - dependencies:
+      event_type: service_end
+    required: true
+    allowed:
+    - low_battery
+    - maintenance
+    - compliance
+    - compliance
+  - dependencies:
+      event_type: provider_pick_up
+    required: true
+    allowed:
+    - rebalance
+    - maintenance
+    - charge
+    - compliance
+  - dependencies:
+      event_type: deregister
+    required: true
+    allowed:
+    - missing
+    - decommissioned
+timestamp:
+  type: integer
+  required: true
+telemetry:
+  type: dict
+  required: true
+  schema:
+    device_id:
+      type: uuid
+      required: true
+    timestamp:
+      type: integer
+      required: true
+    gps:
+      type: dict
+      schema:
+        lat:
+          type: number
+          required: true
+          min: -90
+          max: 90
+        lng:
+          type: number
+          required: true
+          min: -180
+          max: 180
+        altitude:
+          type: number
+        heading:
+          type: number
+        speed:
+          type: number
+        accuracy:
+          type: number
+        hdop:
+          type: number
+        satellites:
+          type: integer
+    charge:
+      type: number
+trip_id:
+  type: uuid
