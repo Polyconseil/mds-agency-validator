@@ -46,6 +46,7 @@ class AgencyBaseValidator_v0_4_0:
 
     def analyze_payload(self):
         """Use cerberus for base checks"""
+        # TODO handle nested paths.
         self.cerberus_validator.validate(self.payload)
         for field, error in self.cerberus_validator.errors.items():
             if error == ['required field']:
