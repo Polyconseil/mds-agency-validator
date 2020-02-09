@@ -91,6 +91,16 @@ class AgencyVehicleRegister_v0_4_0(AgencyBaseValidator_v0_4_0):
         pass
 
 
+class AgencyVehicleUpdate_v0_4_0(AgencyBaseValidator_v0_4_0):
+    """MDS Agency API v0.4.0 Vehicle - Update validator"""
+
+    schema_name = 'schemas/agency_v0.4.0/vehicle_update.yaml'
+
+    def additional_checks(self):
+        # TODO : check vehicle is registred
+        pass
+
+
 class AgencyVehicleEvent_v0_4_0(AgencyBaseValidator_v0_4_0):
     """MDS Agency API v0.4.0 Vehicle - Event validator"""
 
