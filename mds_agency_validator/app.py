@@ -19,7 +19,10 @@ def create_app():
     def agency_v0_4_0_vehicle_register():  # pylint: disable=unused-variable
         return validators.AgencyVehicleRegister_v0_4_0().validate()
 
-    # TODO : add vehicle update
+    @app.route('/v0.4.0/vehicles/<device_id>', methods=['POST'])
+    def agency_v0_4_0_vehicle_update(device_id):  # pylint: disable=unused-variable
+        # TODO check device_id against registered vehicles
+        return validators.AgencyVehicleUpdate_v0_4_0().validate()
 
     @app.route('/v0.4.0/vehicles/<device_id>/event', methods=['POST'])
     def agency_v0_4_0_vehicles_event(device_id):  # pylint: disable=unused-variable

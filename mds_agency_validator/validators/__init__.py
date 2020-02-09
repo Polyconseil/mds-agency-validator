@@ -1,2 +1,3 @@
 from .agency_v0_4_0 import AgencyVehicleRegister_v0_4_0
+from .agency_v0_4_0 import AgencyVehicleUpdate_v0_4_0
 from .agency_v0_4_0 import AgencyVehicleEvent_v0_4_0
