@@ -165,3 +165,32 @@ class AgencyVehicleEvent_v0_4_0(AgencyBaseValidator_v0_4_0):
             else:
                 if 'trip_id' in self.payload:
                     self.bad_param.append('trip_id')
+
+
+class AgencyVehicleTelemetry_v0_4_0(AgencyBaseValidator_v0_4_0):
+    """MDS Agency API v0.4.0 Vehicle - Update validator"""
+
+    schema_name = 'schemas/agency_v0.4.0/vehicle_telemetry.yaml'
+
+    def __init__(self):
+        super().__init__()
+        self.result = 0
+        self.failures = []
+
+    def analyze_payload(self):
+        """Use cerberus for checks"""
+        self.cerberus_validator.validate(self.payload)
+        errors = self.cerberus_validator.errors.get('data', [{}])[0]
+        # TODO also check if device_if is registred
+        data = self.payload['data']
+        self.result = len(data) - len(errors)
+        for i in errors:
+            self.failures.append(data[i])
+
+    def raise_on_anomalies(self):
+        if self.result == 0:
+            abort(400)
+
+    def valid_response(self):
+        data = json.dumps({'result': self.result, 'failures': self.failures})
+        return data, 201

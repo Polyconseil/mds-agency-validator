@@ -29,4 +29,9 @@ def create_app():
         # TODO check device_id against registered vehicles
         return validators.AgencyVehicleEvent_v0_4_0(device_id).validate()
 
+    @app.route('/v0.4.0/vehicles/telemetry', methods=['POST'])
+    def agency_v0_4_0_vehicles_telemetry():  # pylint: disable=unused-variable
+        # TODO check device_id against registered vehicles
+        return validators.AgencyVehicleTelemetry_v0_4_0().validate()
+
     return app
