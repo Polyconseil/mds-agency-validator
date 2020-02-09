@@ -1,0 +1,72 @@
+event_type:
+  type: string
+  required: true
+  allowed:
+  - register
+  - service_start
+  - service_end
+  - provider_drop_off
+  - provider_pick_up
+  - city_pick_up
+  - reserve
+  - cancel_reservation
+  - trip_start
+  - trip_enter
+  - trip_leave
+  - trip_end
+  - deregister
+event_type_reason:
+  type: string
+  allowed:
+  - low_battery
+  - maintenance
+  - compliance
+  - compliance
+  - rebalance
+  - maintenance
+  - charge
+  - compliance
+  - missing
+  - decommissioned
+timestamp:
+  type: integer
+  required: true
+telemetry:
+  type: dict
+  required: true
+  schema:
+    device_id:
+      type: uuid
+      required: true
+    timestamp:
+      type: integer
+      required: true
+    gps:
+      type: dict
+      schema:
+        lat:
+          type: number
+          required: true
+          min: -90
+          max: 90
+        lng:
+          type: number
+          required: true
+          min: -180
+          max: 180
+        altitude:
+          type: number
+        heading:
+          type: number
+        speed:
+          type: number
+        accuracy:
+          type: number
+        hdop:
+          type: number
+        satellites:
+          type: integer
+    charge:
+      type: number
+trip_id:
+  type: uuid

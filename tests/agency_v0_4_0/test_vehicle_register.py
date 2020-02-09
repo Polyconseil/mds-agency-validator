@@ -1,11 +1,12 @@
 from base64 import b64encode
 import json
+import html
 import uuid
 import random
 
 from flask import url_for
 
-from . import utils
+from tests import utils
 
 
 PROPULSION_TYPE = [
@@ -53,13 +54,13 @@ def get_valid_request(**kwargs):
 
 
 def test_valid_post(client):
-    url = url_for('agency_v0_4_0_vehicles')
+    url = url_for('agency_v0_4_0_vehicle_register')
     response = client.post(
         url,
         **get_valid_request(),
     )
     assert response.status == '201 CREATED'
-    assert response.data == b'OK'
+    assert response.data == b''
 
     # Try with minimal arguments
     data = generate_valid_payload()
@@ -67,18 +68,18 @@ def test_valid_post(client):
     del data['mfgr']
     del data['model']
     kwargs = get_valid_request(data=data)
-    url = url_for('agency_v0_4_0_vehicles')
+    url = url_for('agency_v0_4_0_vehicle_register')
     response = client.post(
         url,
         **kwargs,
     )
     assert response.status == '201 CREATED'
-    assert response.data == b'OK'
+    assert response.data == b''
 
 
 def test_incorrect_content_type(client):
     # This is not handle by MDS 0.4.0, so it works with a bad Content-Type
-    url = url_for('agency_v0_4_0_vehicles')
+    url = url_for('agency_v0_4_0_vehicle_register')
     kwargs = get_valid_request()
     kwargs['content_type'] = 'test/html'
     response = client.post(
@@ -86,12 +87,12 @@ def test_incorrect_content_type(client):
         **kwargs,
     )
     assert response.status == '201 CREATED'
-    assert response.data == b'OK'
+    assert response.data == b''
 
 
 def test_incorrect_authorization(client):
     # With no auth at all
-    url = url_for('agency_v0_4_0_vehicles')
+    url = url_for('agency_v0_4_0_vehicle_register')
     kwargs = get_valid_request()
     del kwargs['headers']['Authorization']
     response = client.post(
@@ -114,7 +115,7 @@ def test_incorrect_authorization(client):
 
 
 def test_missing_required(client):
-    url = url_for('agency_v0_4_0_vehicles')
+    url = url_for('agency_v0_4_0_vehicle_register')
     data = generate_valid_payload()
     del data['device_id']
     kwargs = get_valid_request(data=data)
@@ -123,11 +124,12 @@ def test_missing_required(client):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert b"JsonValidationError : {'device_id': ['required field']}" in response.data
+    expected = html.escape(json.dumps({'missing_param': ['device_id']}))
+    assert expected.encode() in response.data
 
 
 def test_wrong_type(client):
-    url = url_for('agency_v0_4_0_vehicles')
+    url = url_for('agency_v0_4_0_vehicle_register')
     data = generate_valid_payload()
     data['device_id'] = 346
     kwargs = get_valid_request(data=data)
@@ -136,15 +138,5 @@ def test_wrong_type(client):
         **kwargs,
     )
     assert response.status == '400 BAD REQUEST'
-    assert b"JsonValidationError : {'device_id': ['must be of uuid type']}" in response.data
-
-    url = url_for('agency_v0_4_0_vehicles')
-    data = generate_valid_payload()
-    data['vehicle_id'] = 346
-    kwargs = get_valid_request(data=data)
-    response = client.post(
-        url,
-        **kwargs,
-    )
-    assert response.status == '400 BAD REQUEST'
-    assert b"JsonValidationError : {'vehicle_id': ['must be of string type']}" in response.data
+    expected = html.escape(json.dumps({'bad_param': ['device_id']}))
+    assert expected.encode() in response.data
