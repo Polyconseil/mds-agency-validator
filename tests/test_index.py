@@ -6,5 +6,6 @@ def test_index(client):
     expected = b"""/
 /v0.4.0/vehicles
 /v0.4.0/vehicles/<device_id>
-/v0.4.0/vehicles/<device_id>/event"""
+/v0.4.0/vehicles/<device_id>/event
+/v0.4.0/vehicles/telemetry"""
     assert expected == response.data
