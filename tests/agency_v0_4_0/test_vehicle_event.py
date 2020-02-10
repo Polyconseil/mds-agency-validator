@@ -1,4 +1,5 @@
 import json
+import jwt
 import html
 import uuid
 
@@ -60,6 +61,7 @@ def test_incorrect_authorization(client):
     data = generate_payload(event)
     device_id = data['telemetry']['device_id']
     url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
+    # With no auth at all
     kwargs = get_request(data)
     del kwargs['headers']['Authorization']
     response = client.post(
@@ -67,7 +69,38 @@ def test_incorrect_authorization(client):
         **kwargs,
     )
     assert response.status == '401 UNAUTHORIZED'
-    assert b'No auth provided' in response.data
+    assert b'Please provide an Authorization' in response.data
+
+    # With Basic token
+    kwargs = get_request(data)
+    kwargs['headers']['Authorization'] = 'Basic dXNlcm5hbWU6cGFzc3dvcmQ='
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '401 UNAUTHORIZED'
+    assert b'Please provide a Bearer token' in response.data
+
+    # Provider_id is missing
+    kwargs = get_request(data)
+    token = jwt.encode({'key': 'value'}, 'secret').decode('utf8')
+    kwargs['headers']['Authorization'] = 'Bearer %s' % token
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '401 UNAUTHORIZED'
+    assert b'Please provide a provider_id' in response.data
+
+    # Invalid JWT
+    kwargs = get_request(data)
+    kwargs['headers']['Authorization'] = 'Bearer bad_jwt'
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '401 UNAUTHORIZED'
+    assert b'Please provide a valid JWT' in response.data
 
 
 def test_trip_id(client):

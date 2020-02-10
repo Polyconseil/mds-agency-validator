@@ -1,5 +1,5 @@
-from base64 import b64encode
 import json
+import jwt
 import uuid
 import random
 
@@ -19,13 +19,12 @@ def generate_telemetry():
 
 
 def get_request(data):
-    # TODO: this is a basic token, not a bearer token
-    auth = b64encode(b'username:password').decode('utf8')
+    token = jwt.encode({'provider_id': str(uuid.uuid4())}, 'secret').decode('utf8')
     request = {
         'data': json.dumps(data),
         'content_type': 'application/json',
         'headers': {
-            'Authorization': 'Bearer %s' % auth
+            'Authorization': 'Bearer %s' % token
         }
     }
     return request

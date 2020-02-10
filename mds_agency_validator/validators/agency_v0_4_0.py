@@ -1,4 +1,5 @@
 import json
+import jwt
 import os
 import yaml
 
@@ -30,14 +31,19 @@ class AgencyBaseValidator_v0_4_0:
         """Check request authorization"""
         auth = request.headers.get('Authorization')
         if auth is None:
-            abort(401, 'No auth provided')
-        auth_type, _token = auth.split(' ')
+            abort(401, 'Please provide an Authorization')
+        # We need a bearer token
+        auth_type, token = auth.split(' ')
         if auth_type != 'Bearer':
-            abort(401, 'Bearer token required')
-        # TODO should contain provider_id
-
-        # Maybe use flask-jwt-extended ?
-        # https://github.com/vimalloc/flask-jwt-extended/blob/bf1a521b444536a5baea086899636406122acbc5/flask_jwt_extended/view_decorators.py#L267
+            abort(401, 'Please provide a Bearer token')
+        # provider_id should be present
+        try:
+            data = jwt.decode(token, verify=False)
+        except jwt.exceptions.DecodeError:
+            abort(401, 'Please provide a valid JWT')
+        else:
+            if 'provider_id' not in data:
+                abort(401, 'Please provide a provider_id')
 
     def extract_payload(self):
         """Extract payload from request"""

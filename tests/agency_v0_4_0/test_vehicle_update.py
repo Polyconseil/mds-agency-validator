@@ -1,5 +1,5 @@
-from base64 import b64encode
 import json
+import jwt
 import html
 import uuid
 
@@ -41,28 +41,47 @@ def test_incorrect_content_type(client):
 
 
 def test_incorrect_authorization(client):
-    # With no auth at all
     url = url_for('agency_v0_4_0_vehicle_update', device_id=str(uuid.uuid4()))
-    data = generate_payload()
-    kwargs = get_request(data)
+    # With no auth at all
+    kwargs = get_request(generate_payload())
     del kwargs['headers']['Authorization']
     response = client.post(
         url,
         **kwargs,
     )
     assert response.status == '401 UNAUTHORIZED'
-    assert b'No auth provided' in response.data
+    assert b'Please provide an Authorization' in response.data
 
     # With Basic token
-    kwargs = get_request(data)
-    token = b64encode(b'username:password').decode('utf8')
-    kwargs['headers']['Authorization'] = 'Basic %s' % token
+    kwargs = get_request(generate_payload())
+    kwargs['headers']['Authorization'] = 'Basic dXNlcm5hbWU6cGFzc3dvcmQ='
     response = client.post(
         url,
         **kwargs,
     )
     assert response.status == '401 UNAUTHORIZED'
-    assert b'Bearer token required' in response.data
+    assert b'Please provide a Bearer token' in response.data
+
+    # Provider_id is missing
+    kwargs = get_request(generate_payload())
+    token = jwt.encode({'key': 'value'}, 'secret').decode('utf8')
+    kwargs['headers']['Authorization'] = 'Bearer %s' % token
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '401 UNAUTHORIZED'
+    assert b'Please provide a provider_id' in response.data
+
+    # Invalid JWT
+    kwargs = get_request(generate_payload())
+    kwargs['headers']['Authorization'] = 'Bearer bad_jwt'
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '401 UNAUTHORIZED'
+    assert b'Please provide a valid JWT' in response.data
 
 
 def test_missing_required(client):
