@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import os
 import yaml
@@ -46,13 +47,32 @@ class AgencyBaseValidator_v0_4_0:
 
     def analyze_payload(self):
         """Use cerberus for base checks"""
-        # TODO handle nested paths.
         self.cerberus_validator.validate(self.payload)
-        for field, error in self.cerberus_validator.errors.items():
-            if error == ['required field']:
+        # Flatten errors on nested fields
+        flat_errors = self.flatten_errors(self.cerberus_validator.errors)
+        # Sort errors between missing fields and bad fields value
+        for field, errors in flat_errors.items():
+            if 'required field' in errors:
                 self.missing_param.append(field)
             else:
                 self.bad_param.append(field)
+
+    def flatten_errors(self, errors):
+        """Flatten cerberus errors on nested schema"""
+        # TODO : add test suite on this function
+        flat_errors = defaultdict(list)
+        for field, field_errors in errors.items():
+            for field_error in field_errors:
+                # if field_error is a string, then it's not nested
+                if isinstance(field_error, str):
+                    flat_errors[field].append(field_error)
+                else:
+                    # field is nested, and is a dict
+                    # each dict key is a field name (or index if it's in a list).
+                    field_flat_errors = self.flatten_errors(field_error)
+                    for key, value in field_flat_errors.items():
+                        flat_errors[field + '.' + key].extend(value)
+        return flat_errors
 
     def additional_checks(self):
         """Override this method to add tests"""
