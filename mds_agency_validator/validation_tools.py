@@ -3,6 +3,11 @@ import re
 
 
 class MdsValidator(cerberus.Validator):
+    """Our custom cerberus validator
+
+    We added an uuid type that is a string formated uuid
+    """
+
     def _validate_type_uuid(self, value):
         if not isinstance(value, str):
             return False

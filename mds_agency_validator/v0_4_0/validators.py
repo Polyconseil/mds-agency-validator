@@ -12,7 +12,22 @@ from mds_agency_validator.validation_tools import MdsValidator
 
 
 class BaseValidator_v0_4_0:
-    """Base class for all Agency v0.4.0 validators"""
+    """Base class for all Agency v0.4.0 validators
+
+    To use children classes, call validate() on class instance.
+    This will perform the following steps :
+
+    - Check the request authorization.
+      MDS Agency 0.4.0 requires a JWT Bearer token with a provider_id.
+    - Extract json payload
+    - Base payload analysis using cerberus to check field values and requirements
+    - Additional checks from child class, such as conditional allowed values.
+      These are painful to write with cerberus, and painful to read.
+      We need this validator to be easy to proofread, so this additional tests
+      are performed in python
+    - Raise error (through falsk.abort) on anomalies
+    - Return the valid response if no anomaly was found
+    """
 
     schema_name = None
 
@@ -26,6 +41,9 @@ class BaseValidator_v0_4_0:
         self.load_cerberus_validator()
 
     def load_cerberus_validator(self):
+        """Load yaml file from class schema_name,
+        then create an instance of our custom cerberus validator
+        """
         base_path = os.path.abspath(os.path.dirname(__file__))
         path = os.path.join(base_path, self.schema_name)
         with open(path, 'r') as schema:
@@ -51,11 +69,12 @@ class BaseValidator_v0_4_0:
 
     def extract_payload(self):
         """Extract payload from request"""
-        # Can't use request.get_json() as Content-Type might be wrong
+        # We cannot use request.get_json() because it only works if Content-Type is
+        # application/json and Agency API v0.4.0 specs don't enforce the Content-Type
         self.payload = json.loads(request.data.decode('utf8'))
 
     def analyze_payload(self):
-        """Use cerberus for base checks"""
+        """Use our custom cerberus validator for base checks"""
         self.cerberus_validator.validate(self.payload)
         # Flatten errors on nested fields
         flat_errors = self.flatten_errors(self.cerberus_validator.errors)
@@ -84,10 +103,15 @@ class BaseValidator_v0_4_0:
         return flat_errors
 
     def additional_checks(self):
-        """Override this method to add tests"""
+        """Additional checks performed after basic cerberus validation.
+        Override this method in child class to add advance checks
+        """
 
     def raise_on_anomalies(self):
-        """Check that bad_params and missing_params are empty"""
+        """Raise Http error if any anomaly was found.
+        By default, it's when bad_params or missing_params are not empty
+        but you can add new anomalies in child class
+        """
         result = {}
         if self.bad_param:
             result['bad_param'] = self.bad_param
@@ -215,8 +239,12 @@ class VehicleTelemetry_v0_4_0(BaseValidator_v0_4_0):
         self.failures = []
 
     def analyze_payload(self):
-        """Use cerberus for checks"""
+        # Replace base cerberus errors parsing
         self.cerberus_validator.validate(self.payload)
+        # on this payload (list of dict) the errors will be a list with only one dict inside
+        # containing the list index as keys :
+        # errors = [{0: {<anomalies on first telemetry>},  {<anomalies on 2nd telemetry>}}]
+        # We need to store failures in self.failures to return them in 201 Success responses
         errors = self.cerberus_validator.errors.get('data', [{}])[0]
         data = self.payload['data']
         for i, telemetry in enumerate(data):
@@ -227,8 +255,10 @@ class VehicleTelemetry_v0_4_0(BaseValidator_v0_4_0):
         self.result = len(data) - len(self.failures)
 
     def raise_on_anomalies(self):
+        # TODO : check response data format
+        # Are bad_params and missing_params also required ?
         if self.result == 0:
-            abort(400)
+            abort(400, 'invalid_data')
 
     def valid_response(self):
         data = json.dumps({'result': self.result, 'failures': self.failures})
