@@ -46,13 +46,28 @@ class AgencyBaseValidator_v0_4_0:
 
     def analyze_payload(self):
         """Use cerberus for base checks"""
-        # TODO handle nested paths.
         self.cerberus_validator.validate(self.payload)
-        for field, error in self.cerberus_validator.errors.items():
-            if error == ['required field']:
+        flat_errors = self.flatten_errors(self.cerberus_validator.errors)
+        for field, errors in flat_errors.items():
+            if errors == ['required field']:
                 self.missing_param.append(field)
             else:
                 self.bad_param.append(field)
+
+    def flatten_errors(self, errors):
+        flat_errors = {}
+        for field, field_errors in errors.items():
+            # Field errors is a list of errors
+            if isinstance(field_errors[0], str):
+                # Field is not nested
+                flat_errors[field] = field_errors
+            else:
+                # Field is nested
+                for field_error in field_errors:
+                    field_flat_error = self.flatten_errors(field_error)
+                    for key, value in field_flat_error.items():
+                        flat_errors[field + '.' + key] = value
+        return flat_errors
 
     def additional_checks(self):
         """Override this method to add tests"""

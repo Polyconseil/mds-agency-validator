@@ -163,6 +163,22 @@ def test_device_id(client):
     assert expected.encode() in response.data
 
 
+def test_invalid_telemetry(client):
+    event = {'event_type': 'register'}
+    data = generate_payload(event)
+    del data['telemetry']['gps']['lat']
+    device_id = data['telemetry']['device_id']
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
+    kwargs = get_request(data)
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '400 BAD REQUEST'
+    expected = html.escape(json.dumps({'missing_param': ['telemetry.gps.lat']}))
+    assert expected.encode() in response.data
+
+
 def test_missing_required(client):
     event = {'event_type': 'register'}
     data = generate_payload(event)
