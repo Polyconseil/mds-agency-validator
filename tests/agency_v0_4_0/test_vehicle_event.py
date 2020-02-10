@@ -6,6 +6,7 @@ import uuid
 from flask import url_for
 
 from tests import utils
+from .conftest import REGISTRED_DEVICE_ID
 from .utils import generate_telemetry
 from .utils import get_request
 
@@ -21,17 +22,15 @@ def generate_payload(event):
     return payload
 
 
-def test_valid_post(client):
+def test_valid_post(client, register_device):
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     valid_events = [
         {'event_type': 'register'},
         {'event_type': 'trip_start', 'trip_id': str(uuid.uuid4())},
         {'event_type': 'deregister', 'event_type_reason': 'missing'},
     ]
     for event in valid_events:
-        data = generate_payload(event)
-        device_id = data['telemetry']['device_id']
-        url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
-        kwargs = get_request(data)
+        kwargs = get_request(generate_payload(event))
         response = client.post(
             url,
             **kwargs,
@@ -40,13 +39,11 @@ def test_valid_post(client):
         assert response.data == b''
 
 
-def test_incorrect_content_type(client):
+def test_incorrect_content_type(client, register_device):
     # This is not handle by MDS 0.4.0, so it works with a bad Content-Type
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'register'}
-    data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     kwargs['content_type'] = 'test/html'
     response = client.post(
         url,
@@ -56,13 +53,11 @@ def test_incorrect_content_type(client):
     assert response.data == b''
 
 
-def test_incorrect_authorization(client):
+def test_incorrect_authorization(client, register_device):
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'register'}
-    data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
+    kwargs = get_request(generate_payload(event))
     # With no auth at all
-    kwargs = get_request(data)
     del kwargs['headers']['Authorization']
     response = client.post(
         url,
@@ -72,7 +67,7 @@ def test_incorrect_authorization(client):
     assert b'Please provide an Authorization' in response.data
 
     # With Basic token
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     kwargs['headers']['Authorization'] = 'Basic dXNlcm5hbWU6cGFzc3dvcmQ='
     response = client.post(
         url,
@@ -82,7 +77,7 @@ def test_incorrect_authorization(client):
     assert b'Please provide a Bearer token' in response.data
 
     # Provider_id is missing
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     token = jwt.encode({'key': 'value'}, 'secret').decode('utf8')
     kwargs['headers']['Authorization'] = 'Bearer %s' % token
     response = client.post(
@@ -93,7 +88,7 @@ def test_incorrect_authorization(client):
     assert b'Please provide a provider_id' in response.data
 
     # Invalid JWT
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     kwargs['headers']['Authorization'] = 'Bearer bad_jwt'
     response = client.post(
         url,
@@ -103,15 +98,13 @@ def test_incorrect_authorization(client):
     assert b'Please provide a valid JWT' in response.data
 
 
-def test_trip_id(client):
+def test_trip_id(client, register_device):
     """should only be present for trip events"""
 
     # trip_ip should be present
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'trip_start'}
-    data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     response = client.post(
         url,
         **kwargs,
@@ -122,10 +115,7 @@ def test_trip_id(client):
 
     # trip_ip should not be present
     event = {'event_type': 'register', 'trip_id': str(uuid.uuid4())}
-    data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     response = client.post(
         url,
         **kwargs,
@@ -135,15 +125,13 @@ def test_trip_id(client):
     assert expected.encode() in response.data
 
 
-def test_event_type_reason(client):
+def test_event_type_reason(client, register_device):
     """required and allowed vaules depends on event_type"""
 
     # event_type_reason shouldn't be present
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'register', 'event_type_reason': 'compliance'}
-    data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     response = client.post(
         url,
         **kwargs,
@@ -154,10 +142,7 @@ def test_event_type_reason(client):
 
     # event_type_reason has a wrong value
     event = {'event_type': 'deregister', 'event_type_reason': 'compliance'}
-    data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     response = client.post(
         url,
         **kwargs,
@@ -169,10 +154,7 @@ def test_event_type_reason(client):
     # event_type_reason should be present
     # TODO confirm if it's true
     event = {'event_type': 'deregister'}
-    data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
-    kwargs = get_request(data)
+    kwargs = get_request(generate_payload(event))
     response = client.post(
         url,
         **kwargs,
@@ -182,10 +164,11 @@ def test_event_type_reason(client):
     assert expected.encode() in response.data
 
 
-def test_device_id(client):
+def test_device_id(client, register_device):
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'register'}
     data = generate_payload(event)
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=str(uuid.uuid4()))
+    data['telemetry']['device_id'] = str(uuid.uuid4())
     kwargs = get_request(data)
     response = client.post(
         url,
@@ -196,12 +179,11 @@ def test_device_id(client):
     assert expected.encode() in response.data
 
 
-def test_invalid_telemetry(client):
+def test_invalid_telemetry(client, register_device):
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'register'}
     data = generate_payload(event)
     del data['telemetry']['gps']['lat']
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
     kwargs = get_request(data)
     response = client.post(
         url,
@@ -212,12 +194,11 @@ def test_invalid_telemetry(client):
     assert expected.encode() in response.data
 
 
-def test_missing_required(client):
+def test_missing_required(client, register_device):
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'register'}
     data = generate_payload(event)
     del data['timestamp']
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
     kwargs = get_request(data)
     response = client.post(
         url,
@@ -228,11 +209,10 @@ def test_missing_required(client):
     assert expected.encode() in response.data
 
 
-def test_wrong_type(client):
+def test_wrong_type(client, register_device):
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'register'}
     data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
     data['telemetry'] = 346
     kwargs = get_request(data)
     response = client.post(
@@ -244,11 +224,10 @@ def test_wrong_type(client):
     assert expected.encode() in response.data
 
 
-def test_unknown_field(client):
+def test_unknown_field(client, register_device):
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
     event = {'event_type': 'register'}
     data = generate_payload(event)
-    device_id = data['telemetry']['device_id']
-    url = url_for('agency_v0_4_0_vehicles_event', device_id=device_id)
     data['unknown_field'] = 'nope'
     kwargs = get_request(data)
     response = client.post(
@@ -258,3 +237,14 @@ def test_unknown_field(client):
     assert response.status == '400 BAD REQUEST'
     expected = html.escape(json.dumps({'bad_param': ['unknown_field']}))
     assert expected.encode() in response.data
+
+
+def test_unregistred_device(client):
+    url = url_for('agency_v0_4_0_vehicles_event', device_id=REGISTRED_DEVICE_ID)
+    event = {'event_type': 'register'}
+    kwargs = get_request(generate_payload(event))
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '404 NOT FOUND'

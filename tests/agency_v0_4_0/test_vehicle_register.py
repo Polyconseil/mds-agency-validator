@@ -8,6 +8,7 @@ from flask import url_for
 
 from tests import utils
 
+from .conftest import REGISTRED_DEVICE_ID
 from .utils import get_request
 
 
@@ -61,6 +62,19 @@ def test_post(client):
     )
     assert response.status == '201 CREATED'
     assert response.data == b''
+
+
+def test_already_registred(client, register_device):
+    data = generate_payload()
+    url = url_for('agency_v0_4_0_vehicle_register')
+    data['device_id'] = REGISTRED_DEVICE_ID
+    kwargs = get_request(data)
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '409 CONFLICT'
+    assert b'' in response.data
 
 
 def test_incorrect_content_type(client):

@@ -7,6 +7,7 @@ import yaml
 from flask import abort
 from flask import request
 
+from mds_agency_validator import cache
 from . import utils
 
 
@@ -114,8 +115,9 @@ class AgencyVehicleRegister_v0_4_0(AgencyBaseValidator_v0_4_0):
     schema_name = 'schemas/agency_v0.4.0/vehicle_register.yaml'
 
     def additional_checks(self):
-        # TODO : check vehicle is not already registred
-        pass
+        device_id = self.payload.get('device_id', None)
+        if device_id and cache.get(device_id):
+            abort(409, 'already_registered')
 
 
 class AgencyVehicleUpdate_v0_4_0(AgencyBaseValidator_v0_4_0):
@@ -123,9 +125,13 @@ class AgencyVehicleUpdate_v0_4_0(AgencyBaseValidator_v0_4_0):
 
     schema_name = 'schemas/agency_v0.4.0/vehicle_update.yaml'
 
+    def __init__(self, device_id, **kwargs):
+        super().__init__(**kwargs)
+        self.device_id = device_id
+
     def additional_checks(self):
-        # TODO : check vehicle is registred
-        pass
+        if not cache.get(self.device_id):
+            abort(404)
 
 
 class AgencyVehicleEvent_v0_4_0(AgencyBaseValidator_v0_4_0):
@@ -133,11 +139,14 @@ class AgencyVehicleEvent_v0_4_0(AgencyBaseValidator_v0_4_0):
 
     schema_name = 'schemas/agency_v0.4.0/vehicle_event.yaml'
 
-    def __init__(self, device_id):
-        super().__init__()
+    def __init__(self, device_id, **kwargs):
+        super().__init__(**kwargs)
         self.device_id = device_id
 
     def additional_checks(self):
+        if not cache.get(self.device_id):
+            abort(404)
+
         # compare route device_id and telemetry device_id
         # We already checked that telemetry is present and contains a device_id with cerberus
         telemetry = self.payload.get('telemetry', {})
@@ -207,11 +216,13 @@ class AgencyVehicleTelemetry_v0_4_0(AgencyBaseValidator_v0_4_0):
         """Use cerberus for checks"""
         self.cerberus_validator.validate(self.payload)
         errors = self.cerberus_validator.errors.get('data', [{}])[0]
-        # TODO also check if device_if is registred
         data = self.payload['data']
-        self.result = len(data) - len(errors)
-        for i in errors:
-            self.failures.append(data[i])
+        for i, telemetry in enumerate(data):
+            # if cerberus found an error, or if device isn't registred
+            if i in errors or not cache.get(telemetry.get('device_id', None)):
+                self.failures.append(data[i])
+
+        self.result = len(data) - len(self.failures)
 
     def raise_on_anomalies(self):
         if self.result == 0:

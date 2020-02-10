@@ -4,17 +4,19 @@ import uuid
 import random
 
 from tests import utils
+from .conftest import REGISTRED_DEVICE_ID
 
 
 def generate_telemetry():
     return {
-        'device_id': str(uuid.uuid4()),
+        'device_id': REGISTRED_DEVICE_ID,
         'timestamp': utils.get_timestamp(),
         'gps': {
             'lat': random.uniform(-90, 90),
             'lng': random.uniform(-180, 180),
         },
         # TODO if applicable (depends on vehicle propulsion ?) add "charge"
+        # confirm if Agency must check with registred vehicle propulsin type
     }
 
 
