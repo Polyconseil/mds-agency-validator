@@ -1,11 +1,11 @@
 import json
 import jwt
 import html
-import uuid
 
 from flask import url_for
 
 from tests import utils
+from .conftest import REGISTRED_DEVICE_ID
 from .utils import get_request
 
 
@@ -16,8 +16,8 @@ def generate_payload():
     }
 
 
-def test_valid_post(client):
-    url = url_for('agency_v0_4_0_vehicle_update', device_id=str(uuid.uuid4()))
+def test_valid_post(client, register_device):
+    url = url_for('agency_v0_4_0_vehicle_update', device_id=REGISTRED_DEVICE_ID)
     response = client.post(
         url,
         **get_request(generate_payload()),
@@ -26,9 +26,9 @@ def test_valid_post(client):
     assert response.data == b''
 
 
-def test_incorrect_content_type(client):
+def test_incorrect_content_type(client, register_device):
     # This is not handle by MDS 0.4.0, so it works with a bad Content-Type
-    url = url_for('agency_v0_4_0_vehicle_update', device_id=str(uuid.uuid4()))
+    url = url_for('agency_v0_4_0_vehicle_update', device_id=REGISTRED_DEVICE_ID)
     data = generate_payload()
     kwargs = get_request(data)
     kwargs['content_type'] = 'test/html'
@@ -40,8 +40,8 @@ def test_incorrect_content_type(client):
     assert response.data == b''
 
 
-def test_incorrect_authorization(client):
-    url = url_for('agency_v0_4_0_vehicle_update', device_id=str(uuid.uuid4()))
+def test_incorrect_authorization(client, register_device):
+    url = url_for('agency_v0_4_0_vehicle_update', device_id=REGISTRED_DEVICE_ID)
     # With no auth at all
     kwargs = get_request(generate_payload())
     del kwargs['headers']['Authorization']
@@ -84,8 +84,8 @@ def test_incorrect_authorization(client):
     assert b'Please provide a valid JWT' in response.data
 
 
-def test_missing_required(client):
-    url = url_for('agency_v0_4_0_vehicle_update', device_id=str(uuid.uuid4()))
+def test_missing_required(client, register_device):
+    url = url_for('agency_v0_4_0_vehicle_update', device_id=REGISTRED_DEVICE_ID)
     data = {}
     kwargs = get_request(data)
     response = client.post(
@@ -97,8 +97,8 @@ def test_missing_required(client):
     assert expected.encode() in response.data
 
 
-def test_wrong_type(client):
-    url = url_for('agency_v0_4_0_vehicle_update', device_id=str(uuid.uuid4()))
+def test_wrong_type(client, register_device):
+    url = url_for('agency_v0_4_0_vehicle_update', device_id=REGISTRED_DEVICE_ID)
     data = {'vehicle_id': 346}
     kwargs = get_request(data)
     response = client.post(
@@ -110,8 +110,8 @@ def test_wrong_type(client):
     assert expected.encode() in response.data
 
 
-def test_unknown_field(client):
-    url = url_for('agency_v0_4_0_vehicle_update', device_id=str(uuid.uuid4()))
+def test_unknown_field(client, register_device):
+    url = url_for('agency_v0_4_0_vehicle_update', device_id=REGISTRED_DEVICE_ID)
     data = generate_payload()
     data['unknown_field'] = 'nope'
     kwargs = get_request(data)
@@ -122,3 +122,13 @@ def test_unknown_field(client):
     assert response.status == '400 BAD REQUEST'
     expected = html.escape(json.dumps({'bad_param': ['unknown_field']}))
     assert expected.encode() in response.data
+
+
+def test_unregistred_device(client):
+    url = url_for('agency_v0_4_0_vehicle_update', device_id=REGISTRED_DEVICE_ID)
+    kwargs = get_request(generate_payload())
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '404 NOT FOUND'
