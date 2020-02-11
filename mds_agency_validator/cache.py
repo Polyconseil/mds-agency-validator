@@ -12,3 +12,6 @@ class Cache:
 
     def clear(self):
         self.data = {}
+
+
+cache = Cache()

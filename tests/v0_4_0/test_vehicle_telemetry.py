@@ -13,7 +13,7 @@ def generate_payload(telemetries):
 
 
 def test_valid_post(client, register_device):
-    url = url_for('agency_v0_4_0_vehicles_telemetry')
+    url = url_for('v0_4_0.vehicle_telemetry')
     telemetries = [generate_telemetry() for _ in range(2)]
     kwargs = get_request(generate_payload(telemetries))
     response = client.post(
@@ -26,7 +26,7 @@ def test_valid_post(client, register_device):
 
 def test_incorrect_content_type(client, register_device):
     # This is not handle by MDS 0.4.0, so it works with a bad Content-Type
-    url = url_for('agency_v0_4_0_vehicles_telemetry')
+    url = url_for('v0_4_0.vehicle_telemetry')
     telemetries = [generate_telemetry() for _ in range(2)]
     kwargs = get_request(generate_payload(telemetries))
     kwargs['content_type'] = 'test/html'
@@ -39,7 +39,7 @@ def test_incorrect_content_type(client, register_device):
 
 
 def test_incorrect_authorization(client, register_device):
-    url = url_for('agency_v0_4_0_vehicles_telemetry')
+    url = url_for('v0_4_0.vehicle_telemetry')
     telemetries = [generate_telemetry() for _ in range(2)]
     data = generate_payload(telemetries)
     # With no auth at all
@@ -90,7 +90,7 @@ def test_partially_invalid(client, register_device):
     good_telemetry = generate_telemetry()
     bad_telemetry = generate_telemetry()
     del bad_telemetry['device_id']
-    url = url_for('agency_v0_4_0_vehicles_telemetry')
+    url = url_for('v0_4_0.vehicle_telemetry')
     telemetries = [good_telemetry, bad_telemetry]
     kwargs = get_request(generate_payload(telemetries))
     response = client.post(
@@ -108,7 +108,7 @@ def test_all_invalid(client, register_device):
 
     bad_telemetry = generate_telemetry()
     del bad_telemetry['device_id']
-    url = url_for('agency_v0_4_0_vehicles_telemetry')
+    url = url_for('v0_4_0.vehicle_telemetry')
     telemetries = [bad_telemetry, bad_telemetry]
     kwargs = get_request(generate_payload(telemetries))
     response = client.post(
@@ -120,7 +120,7 @@ def test_all_invalid(client, register_device):
 
 
 def test_unregistred_device(client, register_device):
-    url = url_for('agency_v0_4_0_vehicles_telemetry')
+    url = url_for('v0_4_0.vehicle_telemetry')
     good_telemetry = generate_telemetry()
     bad_telemetry = generate_telemetry()
     bad_telemetry['device_id'] = str(uuid.uuid4())

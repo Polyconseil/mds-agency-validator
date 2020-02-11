@@ -7,12 +7,14 @@ import yaml
 from flask import abort
 from flask import request
 
-from mds_agency_validator import cache
-from . import utils
+from mds_agency_validator.cache import cache
+from mds_agency_validator.validation_tools import MdsValidator
 
 
-class AgencyBaseValidator_v0_4_0:
+class BaseValidator_v0_4_0:
     """Base class for all Agency v0.4.0 validators"""
+
+    schema_name = None
 
     class Meta:
         abstract = True
@@ -21,13 +23,13 @@ class AgencyBaseValidator_v0_4_0:
         self.bad_param = []
         self.missing_param = []
         self.payload = None
-        self.base_path = os.path.abspath(os.path.dirname(__file__))
         self.load_cerberus_validator()
 
     def load_cerberus_validator(self):
-        path = os.path.join(self.base_path, self.schema_name)
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        path = os.path.join(base_path, self.schema_name)
         with open(path, 'r') as schema:
-            self.cerberus_validator = utils.MdsValidator(yaml.safe_load(schema))
+            self.cerberus_validator = MdsValidator(yaml.safe_load(schema))
 
     def check_authorization(self):
         """Check request authorization"""
@@ -109,10 +111,10 @@ class AgencyBaseValidator_v0_4_0:
         return self.valid_response()
 
 
-class AgencyVehicleRegister_v0_4_0(AgencyBaseValidator_v0_4_0):
+class VehicleRegister_v0_4_0(BaseValidator_v0_4_0):
     """MDS Agency API v0.4.0 Vehicle - Register validator"""
 
-    schema_name = 'schemas/agency_v0.4.0/vehicle_register.yaml'
+    schema_name = 'schemas/vehicle_register.yaml'
 
     def additional_checks(self):
         device_id = self.payload.get('device_id', None)
@@ -120,10 +122,10 @@ class AgencyVehicleRegister_v0_4_0(AgencyBaseValidator_v0_4_0):
             abort(409, 'already_registered')
 
 
-class AgencyVehicleUpdate_v0_4_0(AgencyBaseValidator_v0_4_0):
+class VehicleUpdate_v0_4_0(BaseValidator_v0_4_0):
     """MDS Agency API v0.4.0 Vehicle - Update validator"""
 
-    schema_name = 'schemas/agency_v0.4.0/vehicle_update.yaml'
+    schema_name = 'schemas/vehicle_update.yaml'
 
     def __init__(self, device_id, **kwargs):
         super().__init__(**kwargs)
@@ -134,10 +136,10 @@ class AgencyVehicleUpdate_v0_4_0(AgencyBaseValidator_v0_4_0):
             abort(404)
 
 
-class AgencyVehicleEvent_v0_4_0(AgencyBaseValidator_v0_4_0):
+class VehicleEvent_v0_4_0(BaseValidator_v0_4_0):
     """MDS Agency API v0.4.0 Vehicle - Event validator"""
 
-    schema_name = 'schemas/agency_v0.4.0/vehicle_event.yaml'
+    schema_name = 'schemas/vehicle_event.yaml'
 
     def __init__(self, device_id, **kwargs):
         super().__init__(**kwargs)
@@ -202,10 +204,10 @@ class AgencyVehicleEvent_v0_4_0(AgencyBaseValidator_v0_4_0):
                     self.bad_param.append('trip_id')
 
 
-class AgencyVehicleTelemetry_v0_4_0(AgencyBaseValidator_v0_4_0):
+class VehicleTelemetry_v0_4_0(BaseValidator_v0_4_0):
     """MDS Agency API v0.4.0 Vehicle - Update validator"""
 
-    schema_name = 'schemas/agency_v0.4.0/vehicle_telemetry.yaml'
+    schema_name = 'schemas/vehicle_telemetry.yaml'
 
     def __init__(self):
         super().__init__()
