@@ -28,7 +28,7 @@ Run the following command to start the flask service from the project repository
 
 .. code-block::
 
-    FLASK_APP=mds_agency_validator/app.py flask run
+    make serve
 
 You can now post data to test your Agency API implementation.
 

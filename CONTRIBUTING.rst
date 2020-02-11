@@ -28,3 +28,9 @@ Pull request guidelines
 If you feel like it, you can create a pull request to fix a reported bug.
 
 The main quideline is to include tests (of fix existing tests).
+
+You can use the following command to run the serve in debug mode with ipdb support :
+
+.. code-block::
+
+    make serve-dev
