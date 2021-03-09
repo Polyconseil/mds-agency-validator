@@ -1,11 +1,10 @@
-from collections import defaultdict
 import json
-import jwt
 import os
-import yaml
+from collections import defaultdict
 
-from flask import abort
-from flask import request
+import jwt
+import yaml
+from flask import abort, request
 
 from mds_agency_validator.cache import cache
 from mds_agency_validator.validation_tools import MdsValidator

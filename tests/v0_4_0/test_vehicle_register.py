@@ -1,16 +1,15 @@
-import json
-import jwt
 import html
-import uuid
+import json
 import random
+import uuid
 
+import jwt
 from flask import url_for
 
 from tests import utils
 
 from .conftest import REGISTRED_DEVICE_ID
 from .utils import get_request
-
 
 PROPULSION_TYPE = [
     'combustion',
@@ -43,10 +42,7 @@ def generate_payload():
 
 def test_post(client):
     url = url_for('v0_4_0.vehicle_register')
-    response = client.post(
-        url,
-        **get_request(generate_payload())
-    )
+    response = client.post(url, **get_request(generate_payload()))
     assert response.status == '201 CREATED'
     assert response.data == b''
 
@@ -56,10 +52,7 @@ def test_post(client):
     del data['mfgr']
     del data['model']
     url = url_for('v0_4_0.vehicle_register')
-    response = client.post(
-        url,
-        **get_request(data)
-    )
+    response = client.post(url, **get_request(data))
     assert response.status == '201 CREATED'
     assert response.data == b''
 

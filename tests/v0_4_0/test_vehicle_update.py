@@ -1,10 +1,11 @@
-import json
-import jwt
 import html
+import json
 
+import jwt
 from flask import url_for
 
 from tests import utils
+
 from .conftest import REGISTRED_DEVICE_ID
 from .utils import get_request
 

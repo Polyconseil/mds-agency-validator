@@ -10,8 +10,15 @@ clean:
 docs:
 	sphinx-build -W -n -b html docs ./build/sphinx/html
 
+.PHONY: fix
+fix:
+	black --line-length 120 --skip-string-normalization mds_agency_validator tests
+	isort mds_agency_validator tests
+
 .PHONY: quality
 quality:
+	black --line-length 120 --skip-string-normalization --check mds_agency_validator tests
+	isort --check mds_agency_validator tests
 	python setup.py check --strict --metadata --restructuredtext
 	pylint --reports=no setup.py mds_agency_validator tests
 

@@ -1,9 +1,11 @@
 import json
-import jwt
-import uuid
 import random
+import uuid
+
+import jwt
 
 from tests import utils
+
 from .conftest import REGISTRED_DEVICE_ID
 
 
@@ -25,8 +27,6 @@ def get_request(data):
     request = {
         'data': json.dumps(data),
         'content_type': 'application/json',
-        'headers': {
-            'Authorization': 'Bearer %s' % token
-        }
+        'headers': {'Authorization': 'Bearer %s' % token},
     }
     return request

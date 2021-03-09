@@ -2,7 +2,6 @@ import pytest
 
 from mds_agency_validator.cache import cache
 
-
 REGISTRED_DEVICE_ID = '9bf269ac-4f4c-4ee4-8ea1-6f2c7dfda397'
 
 

@@ -1,5 +1,6 @@
-import cerberus
 import re
+
+import cerberus
 
 
 class MdsValidator(cerberus.Validator):

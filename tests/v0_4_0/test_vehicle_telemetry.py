@@ -1,11 +1,10 @@
 import json
-import jwt
 import uuid
 
+import jwt
 from flask import url_for
 
-from .utils import generate_telemetry
-from .utils import get_request
+from .utils import generate_telemetry, get_request
 
 
 def generate_payload(telemetries):

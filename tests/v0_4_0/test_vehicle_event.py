@@ -1,14 +1,14 @@
-import json
-import jwt
 import html
+import json
 import uuid
 
+import jwt
 from flask import url_for
 
 from tests import utils
+
 from .conftest import REGISTRED_DEVICE_ID
-from .utils import generate_telemetry
-from .utils import get_request
+from .utils import generate_telemetry, get_request
 
 
 def generate_payload(event):
