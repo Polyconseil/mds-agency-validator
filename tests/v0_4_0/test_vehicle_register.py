@@ -107,7 +107,7 @@ def test_incorrect_authorization(client):
 
     # Provider_id is missing
     kwargs = get_request(generate_payload())
-    token = jwt.encode({'key': 'value'}, 'secret').decode('utf8')
+    token = jwt.encode({'key': 'value'}, 'secret')
     kwargs['headers']['Authorization'] = 'Bearer %s' % token
     response = client.post(
         url,

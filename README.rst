@@ -52,4 +52,4 @@ You may generate a fake token to put in the request headers with this command :
     import jwt
     import uuid
 
-    jwt.encode({'provider_id': str(uuid.uuid4())}, 'secret').decode('utf8')
+    jwt.encode({'provider_id': str(uuid.uuid4())}, 'secret')

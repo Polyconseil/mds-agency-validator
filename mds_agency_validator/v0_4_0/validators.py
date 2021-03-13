@@ -59,7 +59,7 @@ class BaseValidator_v0_4_0:
             abort(401, 'Please provide a Bearer token')
         # provider_id should be present
         try:
-            data = jwt.decode(token, verify=False)
+            data = jwt.decode(token, options={'verify_signature': False}, algorithms='HS256')
         except jwt.exceptions.DecodeError:
             abort(401, 'Please provide a valid JWT')
         else:

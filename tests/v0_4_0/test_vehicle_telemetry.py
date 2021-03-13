@@ -63,7 +63,7 @@ def test_incorrect_authorization(client, register_device):
 
     # Provider_id is missing
     kwargs = get_request(data)
-    token = jwt.encode({'key': 'value'}, 'secret').decode('utf8')
+    token = jwt.encode({'key': 'value'}, 'secret')
     kwargs['headers']['Authorization'] = 'Bearer %s' % token
     response = client.post(
         url,

@@ -23,10 +23,9 @@ def generate_telemetry():
 
 
 def get_request(data):
-    token = jwt.encode({'provider_id': str(uuid.uuid4())}, 'secret').decode('utf8')
-    request = {
+    token = jwt.encode({'provider_id': str(uuid.uuid4())}, 'secret', algorithm='HS256')
+    return {
         'data': json.dumps(data),
         'content_type': 'application/json',
         'headers': {'Authorization': 'Bearer %s' % token},
     }
-    return request

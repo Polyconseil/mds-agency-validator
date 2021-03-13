@@ -3,6 +3,7 @@ import json
 import uuid
 
 import jwt
+import pytest
 from flask import url_for
 
 from tests import utils
@@ -22,21 +23,23 @@ def generate_payload(event):
     return payload
 
 
-def test_valid_post(client, register_device):
-    url = url_for('v0_4_0.vehicle_event', device_id=REGISTRED_DEVICE_ID)
-    valid_events = [
+@pytest.mark.parametrize(
+    'event_args',
+    [
         {'event_type': 'register'},
         {'event_type': 'trip_start', 'trip_id': str(uuid.uuid4())},
         {'event_type': 'deregister', 'event_type_reason': 'missing'},
-    ]
-    for event in valid_events:
-        kwargs = get_request(generate_payload(event))
-        response = client.post(
-            url,
-            **kwargs,
-        )
-        assert response.status == '201 CREATED'
-        assert response.data == b''
+    ],
+)
+def test_valid_post(client, register_device, event_args):
+    url = url_for('v0_4_0.vehicle_event', device_id=REGISTRED_DEVICE_ID)
+    kwargs = get_request(generate_payload(event_args))
+    response = client.post(
+        url,
+        **kwargs,
+    )
+    assert response.status == '201 CREATED'
+    assert response.data == b''
 
 
 def test_incorrect_content_type(client, register_device):
@@ -78,7 +81,7 @@ def test_incorrect_authorization(client, register_device):
 
     # Provider_id is missing
     kwargs = get_request(generate_payload(event))
-    token = jwt.encode({'key': 'value'}, 'secret').decode('utf8')
+    token = jwt.encode({'key': 'value'}, 'secret')
     kwargs['headers']['Authorization'] = 'Bearer %s' % token
     response = client.post(
         url,
