@@ -1,8 +1,6 @@
 class Cache:
-    """A very naive cache implementation.
-
-    This cache is use to store registred devices.
-    Beware, when exiting the server all cached data will be lost.
+    """A naive in-memory cache implementation to store registered devices.
+    Data is not persisted.
     """
 
     def __init__(self):
