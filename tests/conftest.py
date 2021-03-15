@@ -14,5 +14,4 @@ def client():
 
 @pytest.fixture(autouse=True)
 def clear_cache():
-    yield
     cache.clear()
