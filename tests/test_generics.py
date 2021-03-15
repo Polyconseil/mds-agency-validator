@@ -11,7 +11,11 @@ def test_index(client):
 /v0.4.0/vehicles
 /v0.4.0/vehicles/<device_id>
 /v0.4.0/vehicles/<device_id>/event
-/v0.4.0/vehicles/telemetry"""
+/v0.4.0/vehicles/telemetry
+/v1.0.0/vehicles
+/v1.0.0/vehicles/<device_id>
+/v1.0.0/vehicles/<device_id>/event
+/v1.0.0/vehicles/telemetry"""
     assert expected == response.data
 
 
@@ -22,6 +26,10 @@ def test_index(client):
         ('v0_4_0.vehicle_telemetry', {}),
         ('v0_4_0.vehicle_event', {'device_id': REGISTERED_DEVICE_ID}),
         ('v0_4_0.vehicle_update', {'device_id': REGISTERED_DEVICE_ID}),
+        ('v1_0_0.vehicle_register', {}),
+        ('v1_0_0.vehicle_telemetry', {}),
+        ('v1_0_0.vehicle_event', {'device_id': REGISTERED_DEVICE_ID}),
+        ('v1_0_0.vehicle_update', {'device_id': REGISTERED_DEVICE_ID}),
     ],
 )
 def test_no_authorization(client, url_name, url_kwargs):

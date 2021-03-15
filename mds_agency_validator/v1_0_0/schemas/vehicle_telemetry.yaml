@@ -1,0 +1,41 @@
+data:
+  type: list
+  required: true
+  schema:
+    type: dict
+    schema:
+      device_id:
+        type: uuid
+        required: true
+      timestamp:
+        type: integer
+        required: true
+      gps:
+        type: dict
+        schema:
+          lat:
+            type: number
+            required: true
+            min: -90
+            max: 90
+          lng:
+            type: number
+            required: true
+            min: -180
+            max: 180
+          altitude:
+            type: number
+          heading:
+            type: number
+          speed:
+            type: number
+          accuracy:
+            type: number
+          hdop:
+            type: number
+          satellites:
+            type: integer
+      charge:
+        type: number
+      stop_id:
+        type: uuid
